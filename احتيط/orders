@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الطلبات</title>
+    <style>
+        body {
+            background-color: #e0f7fa; /* لون خلفية فاتح */
+            font-family: Arial, sans-serif;
+        }
+        .order-item {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            position: relative;
+            border-radius: 5px;
+        }
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f44336; /* لون أحمر */
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .delete-all-button {
+            background-color: #f44336; /* لون أحمر */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .delete-all-button:hover {
+            background-color: #d32f2f;
+        }
+        .admin-button {
+            background-color: #4CAF50; /* أخضر */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .admin-button:hover {
+            background-color: #45a049;
+        }
+        #order-details {
+            margin-top: 20px;
+            background-color: #ffffff; /* لون خلفية أبيض */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>الطلبات</h1>
+    <button class="delete-all-button" onclick="deleteAllOrders()">حذف جميع الطلبات</button>
+    <button class="admin-button" onclick="redirectToAdminPage()">الرجوع إلى إدارة المتجر</button>
+    <div id="order-details">
+        <div id="order-items">
+            <!-- هنا يمكن إضافة تفاصيل الطلبات -->
+        </div>
+    </div>
+    <script>
+        function displayOrderDetails() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderItemsContainer = document.getElementById('order-items');
+            orderItemsContainer.innerHTML = '';
+            orders.forEach(order => {
+                const orderElement = document.createElement('div');
+                orderElement.classList.add('order-item');
+                orderElement.innerHTML = `
+                    <p>اسم المستخدم: ${order.username}</p>
+                    <p>رقم الطلب: ${order.orderId}</p>
+                    <p>تفاصيل الطلب: ${order.orderDetails}</p>
+                    <button class="delete-button" onclick="deleteOrder(${order.orderId})">❌</button>
+                `;
+                orderItemsContainer.appendChild(orderElement);
+            });
+        }
+
+        function deleteOrder(orderId) {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders = orders.filter(order => order.orderId !== orderId);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            displayOrderDetails();
+        }
+
+        function deleteAllOrders() {
+            localStorage.removeItem('orders');
+            displayOrderDetails();
+        }
+
+        function redirectToAdminPage() {
+            window.location.href = 'admin.html';
+        }
+
+        window.onload = displayOrderDetails;
+    </script>
+</body>
+</html>

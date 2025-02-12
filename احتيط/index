@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بقالة سعد</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+    <style>
+        #store-status {
+            display: none; /* إخفاء رسالة "المتجر مغلق" بشكل افتراضي */
+            color: red;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        .cart-popup {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .cart-popup.active {
+            display: block;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        #success-message {
+            display: none;
+            color: green;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        .product.unavailable {
+            opacity: 0.5;
+        }
+        .product.unavailable::after {
+            content: "غير متوفر حالياً";
+            color: red;
+            font-size: 16px;
+            display: block;
+        }
+        .admin-button {
+            font-size: 1.5rem; /* تكبير حجم الثلاث نقاط */
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>بقالة سعد</h1>
+        <div class="cart" id="cart-icon" onclick="redirectToCartPage()">
+            🛒 <span id="cart-count">0</span>
+        </div>
+        <button class="admin-button" onclick="promptAdminPassword()">⋮</button>
+    </header>
+    <p>حاليا لا يمكنك إضافة نفس المنتج أكثر من مرة في سلة المشتريات.</p>
+
+    <!-- سلة المشتريات -->
+    <div id="cart-popup" class="cart-popup">
+        <h2>🛒 سلة المشتريات</h2>
+        <div id="cart-items"></div>
+        <button id="clear-cart" onclick="clearCart()">إفراغ السلة</button>
+        <button id="order-cart" onclick="orderCart()">طلب</button> <!-- زر الطلب -->
+    </div>
+    <main>
+        <div id="store-status">المتجر مغلق حالياً</div> <!-- رسالة "المتجر مغلق" -->
+        
+        <!-- منتج 1 -->
+        <div class="product">
+            <img src="لقطة-شاشة-2025-02-10-010625.jpg" alt="عصير سن توب ">
+            <h3>عصير سن توب </h3>
+            <p> المشروب الرائع غني بشكل طبيعي بفيتامين C، مما يجعله خيارًا ممتازًا .</p>
+            <p>السعر: <strong>1,50 ريال</strong></p>
+            <button onclick="addToCart('1', 'عصير سن توب ', 1.50)">إضافة للسلة</button>
+        </div>
+
+        <!-- منتج 2 -->
+        <div class="product">
+            <img src="لقطة-شاشة-2025-02-10-010806.jpg" alt="حليب النجوم بالشوكولاتة">
+            <h3> النجوم بالشوكولاتة</h3>
+            <p>حليب الشوكولاته .</p>
+            <p>السعر: <strong>1 ريال</strong></p>
+            <button onclick="addToCart('2', 'النجوم بالشوكولاتة', 1)">إضافة للسلة</button>
+        </div>
+
+        <!-- منتج 3 -->
+        <div class="product">
+            <img src="لقطة-شاشة-2025-02-10-010120_1.jpg" alt="ليز الجبنة">
+            <h3>ليز الجبنة</h3>
+            <p>وجبة تحتوي كل علبة على قطع صغيرة من البطاطس المقرمشة المغمورة بالجبنة الفرنسية اللذيذة.</p>
+            <p>السعر: <strong>2,50 ريال</strong></p>
+            <button onclick="addToCart('3', 'ليز الجبنة', 2.50)">إضافة للسلة</button>
+        </div>
+
+        <!-- منتج 4 -->
+        <div class="product">
+            <img src="لقطة-شاشة-2025-02-10-011015_1.jpg" alt="عيدان البطاطس الليمون الحار">
+            <h3>عيدان البطاطس الليمون الحار</h3>
+            <p>يحتوي على اعواد البطاطس اللذيذة بنكهة الليمون الحار</p>
+            <p>السعر: <strong>3 ريال</strong></p>
+            <button onclick="addToCart('4', 'عيدان البطاطس الليمون الحار', 3)">إضافة للسلة</button>
+        </div>
+
+        <!-- منتج 5 -->
+        <div class="product">
+            <img src="لقطة-شاشة-2025-02-12-000247.jpg" alt="كيندر بوينو">
+            <h3>كيندر بوينو</h3>
+            <p>أصبعين من رقائق البسكويت المغطاة بشوكولاتة الحليب مع حشوة كريمة</p>
+            <p>السعر: <strong>4 ريال</strong></p>
+            <button onclick="addToCart('5', 'كيندر بوينو', 4)">إضافة للسلة</button>
+        </div>
+    </main>
+    <script>
+        const channel = new BroadcastChannel('store-status');
+
+        function sendOrder(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            const orderId = Math.floor(1000 + Math.random() * 9000); // رقم طلب مكون من 4 أرقام
+            const orderDetails = cartItems.map(item => `${item.name}`).join(', ');
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push({ username, orderId, orderDetails });
+            localStorage.setItem('orders', JSON.stringify(orders));
+            // عرض رسالة النجاح
+            document.getElementById('success-message').style.display = 'block';
+            // إعادة توجيه إلى صفحة الطلبات
+            setTimeout(() => {
+                window.location.href = `orders.html`;
+            }, 2000);
+        }
+
+        function addToCart(id, name, price) {
+            if (localStorage.getItem('storeStatus') === 'block') {
+                alert('المتجر مغلق حالياً. لا يمكن إضافة منتجات إلى السلة.');
+                return;
+            }
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            const existingItem = cartItems.find(item => item.id === id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cartItems.push({ id, name, price, quantity: 1 });
+            }
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+            updateCartCount();
+        }
+
+        function updateCartCount() {
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+            document.getElementById('cart-count').textContent = cartCount;
+        }
+
+        function redirectToCartPage() {
+            window.location.href = 'cart.html';
+        }
+
+        function toggleCart() {
+            if (localStorage.getItem('storeStatus') === 'block') {
+                alert('المتجر مغلق حالياً. لا يمكن عرض السلة.');
+                return;
+            }
+            document.getElementById('cart-popup').classList.toggle('active');
+            displayCartItems();
+        }
+
+        function displayCartItems() {
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            const cartItemsContainer = document.getElementById('cart-items');
+            cartItemsContainer.innerHTML = '';
+            cartItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('cart-item');
+                itemElement.innerHTML = `
+                    <span>${item.name}</span>
+                    <span>${item.price} ريال</span>
+                `;
+                cartItemsContainer.appendChild(itemElement);
+            });
+        }
+
+        function clearCart() {
+            localStorage.removeItem('cartItems');
+            updateCartCount();
+            displayCartItems();
+        }
+
+        function promptAdminPassword() {
+            const password = prompt("الرجاء إدخال الرقم السري:");
+            if (password === "1234") {
+                window.location.href = 'admin.html';
+            } else {
+                alert('الرقم السري غير صحيح');
+            }
+        }
+
+        function updateStoreStatus() {
+            const storeStatus = localStorage.getItem('storeStatus');
+            document.getElementById('store-status').style.display = storeStatus;
+            const isClosed = storeStatus === 'block';
+            document.querySelectorAll('.product button').forEach(button => {
+                button.disabled = isClosed;
+            });
+            document.getElementById('cart-icon').style.display = isClosed ? 'none' : 'block';
+        }
+
+        window.onload = () => {
+            updateCartCount();
+            updateStoreStatus();
+        };
+
+        window.addEventListener('storeStatusChange', (event) => {
+            const isClosed = event.detail.storeStatus === 'block';
+            document.getElementById('store-status').style.display = isClosed ? 'block' : 'none';
+            document.querySelectorAll('.product button').forEach(button => {
+                button.disabled = isClosed;
+            });
+            document.getElementById('cart-icon').style.display = isClosed ? 'none' : 'block';
+        });
+
+        channel.onmessage = (event) => {
+            const storeStatus = event.data.storeStatus;
+            localStorage.setItem('storeStatus', storeStatus);
+            updateStoreStatus();
+        };
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'storeStatus') {
+                const storeStatus = event.newValue;
+                updateStoreStatus();
+            }
+        });
+    </script>
+</body>
+</html>

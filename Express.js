@@ -1,0 +1,24 @@
+const express = require('express');
+const app = express();
+const port = 3903;
+const { LocalStorage } = require("node-localstorage");
+
+// إنشاء localStorage محلي
+const localStorage = new LocalStorage('./scratch');
+
+// تقديم الملفات الثابتة
+app.use(express.static(__dirname));
+
+app.get("/show-store", (req, res) => {
+    localStorage.setItem("storeVisible", "true");
+    res.json({ message: "تم فتح المتجر!" });
+});
+
+app.get("/hide-store", (req, res) => {
+    localStorage.setItem("storeVisible", "false");
+    res.json({ message: "تم إخفاء المتجر!" });
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});

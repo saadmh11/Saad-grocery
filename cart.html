@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلة المشتريات</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>سلة المشتريات</h1>
+        <p>الرجاء حفظ رقم الطلب الخاص بك.</p>
+        <p>حاليا لا يمكنك إضافة نفس المنتج أكثر من مرة.</p>
+        <button onclick="window.location.href='index.html'">العودة إلى المتجر</button>
+    </header>
+    <main>
+        <div id="cart-items"></div>
+        <button id="clear-cart" onclick="clearCart()">إفراغ السلة</button>
+        <button id="order-cart" onclick="orderCart()">طلب</button> <!-- زر الطلب -->
+    </main>
+    <script>
+        function displayCartItems() {
+            const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItemsContainer = document.getElementById('cart-items');
+            cartItemsContainer.innerHTML = '';
+            cartItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('cart-item');
+                itemElement.innerHTML = `
+                    <span>${item.name}</span>
+                    <span>${item.price} ريال </span>
+                    <button style="font-size: 0.75rem; background: none; border: none; cursor: pointer;" onclick="removeFromCart('${item.id}')">❌</button>
+
+                    `;
+                cartItemsContainer.appendChild(itemElement);
+            });
+        }
+
+        function removeFromCart(id) {
+            let cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            cartItems = cartItems.filter(item => item.id !== id);
+            localStorage.setItem('cart', JSON.stringify(cartItems));
+            displayCartItems();
+        }
+
+        function clearCart() {
+            localStorage.removeItem('cart');
+            displayCartItems();
+        }
+
+        function orderCart() {
+            const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cartItems.length === 0) {
+                alert('السلة فارغة! لا يمكن تقديم طلب.');
+                return;
+            }
+
+            const username = prompt('ما اسم المستخدم؟');
+            if (!username) {
+                alert('يجب إدخال اسم المستخدم لتقديم الطلب.');
+                return;
+            }
+
+            const orderDetails = cartItems.map(item => `${item.name}`).join(', ');
+            const orderId = Math.floor(1000 + Math.random() * 9000); // رقم طلب مكون من 4 أرقام
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push({ username, orderId, orderDetails });
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            alert(`تم تقديم طلبك بنجاح، ${username}:\n${orderDetails}\nرقم الطلب: ${orderId}`);
+            clearCart(); // إفراغ السلة بعد تقديم الطلب
+        }
+
+        window.onload = displayCartItems;
+    </script>
+</body>
+</html>

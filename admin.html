@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المتجر</title>
+    <style>
+        body {
+            background-color: #e0f7fa; /* لون خلفية فاتح */
+            font-family: Arial, sans-serif;
+        }
+        .order-item {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            position: relative;
+            border-radius: 5px;
+        }
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f44336; /* لون أحمر */
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .delete-all-button {
+            background-color: #f44336; /* لون أحمر */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .admin-button {
+            background-color: #4CAF50; /* أخضر */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .admin-button:hover {
+            background-color: #45a049;
+        }
+        #admin-section {
+            margin-top: 20px;
+            background-color: #ffffff; /* لون خلفية أبيض */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>إدارة المتجر</h1>
+    <div id="order-details">
+        <div id="order-items">
+            <!-- هنا يمكن إضافة تفاصيل الطلبات -->
+        </div>
+    </div>
+    <div id="admin-section">
+        <button class="admin-button" onclick="toggleStoreStatus()">تبديل حالة المتجر</button>
+        <button class="admin-button" onclick="redirectToOrdersPage()">الطلبات</button>
+        <button class="admin-button" onclick="redirectToAdminPage()">الرجوع إلى المتجر</button>
+    </div>
+    <script>
+        const channel = new BroadcastChannel('store-status');
+
+        function deleteOrder(orderId) {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders = orders.filter(order => order.orderId !== orderId);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            displayOrderDetails();
+        }
+
+        function deleteAllOrders() {
+            localStorage.removeItem('orders');
+            displayOrderDetails();
+        }
+
+        function toggleStoreStatus() {
+            const storeStatus = localStorage.getItem('storeStatus') === 'block' ? 'none' : 'block';
+            localStorage.setItem('storeStatus', storeStatus);
+            notifyStoreStatusChange(storeStatus);
+        }
+
+        function notifyStoreStatusChange(storeStatus) {
+            const event = new CustomEvent('storeStatusChange', { detail: { storeStatus } });
+            window.dispatchEvent(event);
+            channel.postMessage({ storeStatus });
+        }
+
+        function redirectToOrdersPage() {
+            window.location.href = 'orders.html';
+        }
+
+        
+        window.onload = () => {
+            const storeStatus = localStorage.getItem('storeStatus');
+            notifyStoreStatusChange(storeStatus);
+            displayOrderDetails();
+        };
+
+        channel.onmessage = (event) => {
+            const storeStatus = event.data.storeStatus;
+            localStorage.setItem('storeStatus', storeStatus);
+            notifyStoreStatusChange(storeStatus);
+        };
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'storeStatus') {
+                const storeStatus = event.newValue;
+                notifyStoreStatusChange(storeStatus);
+            }
+        });
+
+        function deleteAllOrders() {
+            localStorage.removeItem('admin');
+            displayOrderDetails();
+        }
+
+        function redirectToAdminPage() {
+            window.location.href = 'index.html';
+        }
+</script>
+</body>
+</html>

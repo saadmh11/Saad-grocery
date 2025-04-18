@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المالك - بقالة سعد</title>
+    <style>
+        body {
+            background-color: #e0f7fa;
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .dashboard-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .order-item {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            position: relative;
+        }
+        .order-item h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .order-products {
+            margin-top: 10px;
+        }
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .action-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .delete-all-button {
+            background-color: #f44336;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #ddd;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .status-new {
+            background-color: #2196F3;
+        }
+        .status-processing {
+            background-color: #FF9800;
+        }
+        .status-completed {
+            background-color: #4CAF50;
+        }
+        .status-cancelled {
+            background-color: #f44336;
+        }
+        .no-orders {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .search-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .refresh-button {
+            background-color: #2196F3;
+        }
+        .sync-indicator {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>لوحة تحكم المالك - بقالة سعد</h1>
+        <div>
+            <button class="action-button" onclick="toggleStoreStatus()">
+                <span id="store-status-text">تبديل حالة المتجر</span>
+            </button>
+            <button class="action-button" onclick="logout()">تسجيل الخروج</button>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="البحث عن طلب بالاسم أو رقم الطلب">
+            <button class="search-button" onclick="searchOrders()">بحث</button>
+            <button class="search-button refresh-button" onclick="loadOrders()">تحديث الطلبات</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('all-orders')">جميع الطلبات</button>
+            <button class="tab" onclick="showTab('new-orders')">طلبات جديدة</button>
+            <button class="tab" onclick="showTab('processing-orders')">قيد التنفيذ</button>
+            <button class="tab" onclick="showTab('completed-orders')">مكتملة</button>
+        </div>
+
+        <div id="sync-indicator" class="sync-indicator">تم مزامنة الطلبات بنجاح!</div>
+
+        <div id="all-orders" class="tab-content active">
+            <button class="action-button delete-all-button" onclick="deleteAllOrders()">حذف جميع الطلبات</button>
+            <div id="all-orders-container"></div>
+        </div>
+
+        <div id="new-orders" class="tab-content">
+            <div id="new-orders-container"></div>
+        </div>
+
+        <div id="processing-orders" class="tab-content">
+            <div id="processing-orders-container"></div>
+        </div>
+
+        <div id="completed-orders" class="tab-content">
+            <div id="completed-orders-container"></div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <h2>إحصائيات المتجر</h2>
+        <div id="stats-container">
+            <p>إجمالي الطلبات: <span id="total-orders">0</span></p>
+            <p>الطلبات الجديدة: <span id="new-orders-count">0</span></p>
+            <p>طلبات قيد التنفيذ: <span id="processing-orders-count">0</span></p>
+            <p>الطلبات المكتملة: <span id="completed-orders-count">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // المفتاح الخاص للمالك في التخزين المحلي
+        const OWNER_KEY = "saad_grocery_owner_token";
+        // المفتاح الخاص بالطلبات في التخزين المحلي
+        const ORDERS_KEY = "orders";
+        // المفتاح الخاص بحالة المتجر في التخزين المحلي
+        const STORE_STATUS_KEY = "storeStatus";
+        
+        // Firebase Realtime Database URL (لاحظ: هذا مثال توضيحي، يجب استبداله بـURL الخاص بك)
+        const FIREBASE_DB_URL = "https://saad-grocery-default-rtdb.firebaseio.com";
+        
+        // التأكد من وجود المستخدم المصرح له
+        function checkAuthentication() {
+            const ownerToken = localStorage.getItem(OWNER_KEY);
+            if (!ownerToken) {
+                // إعادة توجيه إلى صفحة تسجيل الدخول
+                window.location.href = 'owner-login.html';
+            }
+        }
+        
+        // تسجيل الخروج
+        function logout() {
+            localStorage.removeItem(OWNER_KEY);
+            window.location.href = 'owner-login.html';
+        }
+        
+        // تحميل الطلبات من Firebase
+        function loadOrders() {
+            // في الإنتاج، استبدل هذا بطلب حقيقي إلى Firebase
+            // أما الآن، سنستخدم التخزين المحلي كبديل للتوضيح
+            const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+            
+            // إضافة حالة للطلبات إذا لم تكن موجودة
+            orders.forEach(order => {
+                if (!order.status) {
+                    order.status = 'new';
+                }
+                if (!order.timestamp) {
+                    order.timestamp = Date.now();
+                }
+            });
+            
+            displayOrders(orders);
+            updateStats(orders);
+            
+            // تحديث التخزين المحلي بالبيانات المحدثة
+            localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+            
+            // إظهار مؤشر المزامنة
+            const syncIndicator = document.getElementById('sync-indicator');
+            syncIndicator.style.display = 'block';
+            setTimeout(() => {
+                syncIndicator.style.display = 'none';
+            }, 3000);
+        }
+        
+        // عرض الطلبات في واجهة المستخدم
+        function displayOrders(orders) {
+            // ترتيب الطلبات بحسب الوقت (الأحدث أولاً)
+            orders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            
+            const allOrdersContainer = document.getElementById('all-orders-container');
+            const newOrdersContainer = document.getElementById('new-orders-container');
+            const processingOrdersContainer = document.getElementById('processing-orders-container');
+            const completedOrdersContainer = document.getElementById('completed-orders-container');
+            
+            // إعادة تعيين المحتويات
+            allOrdersContainer.innerHTML = '';
+            newOrdersContainer.innerHTML = '';
+            processingOrdersContainer.innerHTML = '';
+            completedOrdersContainer.innerHTML = '';
+            
+            if (orders.length === 0) {
+                allOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات حالياً</div>';
+                newOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات جديدة</div>';
+                processingOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات قيد التنفيذ</div>';
+                completedOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات مكتملة</div>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const orderElement = createOrderElement(order);
+                
+                // إضافة العنصر إلى الحاويات المناسبة
+                allOrdersContainer.appendChild(orderElement.cloneNode(true));
+                
+                if (order.status === 'new') {
+                    newOrdersContainer.appendChild(orderElement.cloneNode(true));
+                } else if (order.status === 'processing') {
+                    processingOrdersContainer.appendChild(orderElement.cloneNode(true));
+                } else if (order.status === 'completed' || order.status === 'cancelled') {
+                    completedOrdersContainer.appendChild(orderElement.cloneNode(true));
+                }
+            });
+            
+            // التحقق من وجود طلبات في كل قسم
+            if (!newOrdersContainer.hasChildNodes()) {
+                newOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات جديدة</div>';
+            }
+            if (!processingOrdersContainer.hasChildNodes()) {
+                processingOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات قيد التنفيذ</div>';
+            }
+            if (!completedOrdersContainer.hasChildNodes()) {
+                completedOrdersContainer.innerHTML = '<div class="no-orders">لا توجد طلبات مكتملة</div>';
+            }
+        }
+        
+        // إنشاء عنصر HTML للطلب
+        function createOrderElement(order) {
+            const orderElement = document.createElement('div');
+            orderElement.classList.add('order-item');
+            
+            // تحديد نص وصنف شارة الحالة
+            let statusText, statusClass;
+            switch (order.status) {
+                case 'new':
+                    statusText = 'جديد';
+                    statusClass = 'status-new';
+                    break;
+                case 'processing':
+                    statusText = 'قيد التنفيذ';
+                    statusClass = 'status-processing';
+                    break;
+                case 'completed':
+                    statusText = 'مكتمل';
+                    statusClass = 'status-completed';
+                    break;
+                case 'cancelled':
+                    statusText = 'ملغي';
+                    statusClass = 'status-cancelled';
+                    break;
+                default:
+                    statusText = 'جديد';
+                    statusClass = 'status-new';
+            }
+            
+            // تنسيق الوقت والتاريخ
+            let dateDisplay = 'غير معروف';
+            if (order.timestamp) {
+                const date = new Date(order.timestamp);
+                dateDisplay = `${date.toLocaleDateString('ar-SA')} ${date.toLocaleTimeString('ar-SA')}`;
+            }
+            
+            orderElement.innerHTML = `
+                <h3>طلب #${order.orderId} - <span class="status-badge ${statusClass}">${statusText}</span></h3>
+                <div class="order-meta">
+                    <span>العميل: ${order.username}</span>
+                    <span>التاريخ: ${dateDisplay}</span>
+                </div>
+                <div class="order-products">
+                    <strong>المنتجات:</strong> ${order.orderDetails}
+                </div>
+                <div style="margin-top: 15px;">
+                    ${order.status === 'new' ? `<button class="action-button" onclick="updateOrderStatus(${order.orderId}, 'processing')">بدء التنفيذ</button>` : ''}
+                    ${order.status === 'processing' ? `<button class="action-button" onclick="updateOrderStatus(${order.orderId}, 'completed')">إكمال الطلب</button>` : ''}
+                    ${order.status !== 'cancelled' && order.status !== 'completed' ? `<button class="action-button delete-all-button" onclick="updateOrderStatus(${order.orderId}, 'cancelled')">إلغاء الطلب</button>` : ''}
+                </div>
+                <button class="delete-button" onclick="deleteOrder(${order.orderId})">✕</button>
+            `;
+            
+            return orderElement;
+        }
+        
+        // تحديث إحصائيات الطلبات
+        function updateStats(orders) {
+            const totalOrders = orders.length;
+            const newOrders = orders.filter(order => order.status === 'new').length;
+            const processingOrders = orders.filter(order => order.status === 'processing').length;
+            const completedOrders = orders.filter(order => order.status === 'completed' || order.status === 'cancelled').length;
+            
+            document.getElementById('total-orders').textContent = totalOrders;
+            document.getElementById('new-orders-count').textContent = newOrders;
+            document.getElementById('processing-orders-count').textContent = processingOrders;
+            document.getElementById('completed-orders-count').textContent = completedOrders;
+        }
+        
+        // تحديث حالة الطلب
+        function updateOrderStatus(orderId, newStatus) {
+            let orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+            const orderIndex = orders.findIndex(order => order.orderId === orderId);
+            
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = newStatus;
+                localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+                
+                // في الإنتاج، قم بتحديث Firebase هنا
+                
+                // تحديث الواجهة
+                loadOrders();
+            }
+        }
+        
+        // حذف طلب معين
+        function deleteOrder(orderId) {
+            if (confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+                let orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+                orders = orders.filter(order => order.orderId !== orderId);
+                localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+                
+                // في الإنتاج، قم بحذف الطلب من Firebase هنا
+                
+                // تحديث الواجهة
+                loadOrders();
+            }
+        }
+        
+        // حذف جميع الطلبات
+        function deleteAllOrders() {
+            if (confirm('هل أنت متأكد من حذف جميع الطلبات؟ لا يمكن التراجع عن هذا الإجراء!')) {
+                localStorage.removeItem(ORDERS_KEY);
+                
+                // في الإنتاج، قم بحذف جميع الطلبات من Firebase هنا
+                
+                // تحديث الواجهة
+                loadOrders();
+            }
+        }
+        
+        // البحث عن الطلبات
+        function searchOrders() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            if (!searchText) {
+                loadOrders();
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+            const filteredOrders = orders.filter(order => 
+                order.username.toLowerCase().includes(searchText) || 
+                order.orderId.toString().includes(searchText) ||
+                order.orderDetails.toLowerCase().includes(searchText)
+            );
+            
+            displayOrders(filteredOrders);
+        }
+        
+        // تبديل حالة المتجر (مفتوح/مغلق)
+        function toggleStoreStatus() {
+            const currentStatus = localStorage.getItem(STORE_STATUS_KEY) === 'block' ? 'none' : 'block';
+            localStorage.setItem(STORE_STATUS_KEY, currentStatus);
+            
+            // تحديث نص الزر
+            updateStoreStatusButton();
+            
+            // إرسال إشعار إلى جميع النوافذ المفتوحة
+            const channel = new BroadcastChannel('store-status');
+            channel.postMessage({ storeStatus: currentStatus });
+        }
+        
+        // تحديث نص زر حالة المتجر
+        function updateStoreStatusButton() {
+            const isClosed = localStorage.getItem(STORE_STATUS_KEY) === 'block';
+            const statusButton = document.getElementById('store-status-text');
+            statusButton.textContent = isClosed ? 'فتح المتجر' : 'إغلاق المتجر';
+            statusButton.style.color = isClosed ? 'yellow' : 'white';
+        }
+        
+        // عرض علامة تبويب معينة
+        function showTab(tabId) {
+            // إزالة الصنف النشط من جميع علامات التبويب
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // إزالة الصنف النشط من جميع محتويات علامات التبويب
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // تحديد علامة التبويب النشطة الجديدة
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        // عند تحميل الصفحة
+        window.onload = function() {
+            // التحقق من تسجيل دخول المستخدم
+            checkAuthentication();
+            
+            // تحميل الطلبات
+            loadOrders();
+            
+            // تحديث نص زر حالة المتجر
+            updateStoreStatusButton();
+            
+            // استمع إلى تغييرات حالة المتجر
+            const channel = new BroadcastChannel('store-status');
+            channel.onmessage = (event) => {
+                const storeStatus = event.data.storeStatus;
+                localStorage.setItem(STORE_STATUS_KEY, storeStatus);
+                updateStoreStatusButton();
+            };
+        };
+    </script>
+</body>
+</html>

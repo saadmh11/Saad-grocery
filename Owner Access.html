@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل دخول المالك - بقالة سعد</title>
+    <style>
+        body {
+            background-color: #e0f7fa;
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            padding: 20px;
+        }
+        .login-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 400px;
+            margin: 50px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            direction: rtl;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>تسجيل دخول المالك</h1>
+        <p>الرجاء إدخال بيانات تسجيل الدخول للوصول إلى لوحة تحكم المالك</p>
+        
+        <form id="owner-login-form">
+            <input type="text" id="username" placeholder="اسم المستخدم" required>
+            <input type="password" id="password" placeholder="كلمة المرور" required>
+            <button type="submit">تسجيل الدخول</button>
+        </form>
+        
+        <p id="error-message" class="error-message">اسم المستخدم أو كلمة المرور غير صحيحة</p>
+        
+        <p>
+            <a href="index.html">العودة إلى المتجر</a>
+        </p>
+    </div>
+
+    <script>
+        // بيانات تسجيل دخول المالك (يجب تغييرها في الإنتاج)
+        const ownerCredentials = {
+            username: "owner",
+            password: "owner1234"
+        };
+
+        // إنشاء مفتاح خاص للمالك في التخزين المحلي
+        const OWNER_KEY = "saad_grocery_owner_token";
+        
+        document.getElementById('owner-login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === ownerCredentials.username && password === ownerCredentials.password) {
+                // إنشاء رمز بسيط للمصادقة
+                const ownerToken = btoa(username + ":" + Date.now());
+                
+                // حفظ رمز المصادقة في التخزين المحلي
+                localStorage.setItem(OWNER_KEY, ownerToken);
+                
+                // إعادة التوجيه إلى صفحة لوحة تحكم المالك
+                window.location.href = 'owner-dashboard.html';
+            } else {
+                // عرض رسالة الخطأ
+                document.getElementById('error-message').style.display = 'block';
+            }
+        });
+
+        // التحقق ما إذا كان المستخدم مسجل دخوله بالفعل
+        window.onload = function() {
+            const ownerToken = localStorage.getItem(OWNER_KEY);
+            if (ownerToken) {
+                // إذا كان الرمز موجودًا، توجيه المستخدم مباشرة إلى لوحة التحكم
+                window.location.href = 'owner-dashboard.html';
+            }
+        };
+    </script>
+</body>
+</html>
